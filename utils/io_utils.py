@@ -23,7 +23,7 @@ with open(TEST_SETS_DEFAULT_DIR / "old_new_ids_map.json") as fp:
 
 
 def select_files_to_score(submissions_dir: Path, scored_files_dir: Path = SCORED_FILES_MEMORY_DIR, mail_file_path: Path = DEFAULT_MAIL_FILE_PATH, max_attempts_num: int = 3):
-    scored_submissions_set = set(zip_path.name for zip_path in scored_files_dir.glob("*.zip"))
+    scored_submissions_set = set(zip_path.name for zip_path in scored_files_dir.glob("**/*.zip"))
     teams_num_attempts_dict = _count_teams_attempts(scored_submissions_set)
     teams_df = pd.read_csv(mail_file_path)
     valid_email_addresses_set = set(teams_df['email'])
@@ -31,7 +31,8 @@ def select_files_to_score(submissions_dir: Path, scored_files_dir: Path = SCORED
     for submission_email_path in submissions_dir.iterdir():
         team_leader_email = submission_email_path.name
         if team_leader_email not in valid_email_addresses_set:
-            print(f"Team leader {team_leader_email} does not exist in the database {mail_file_path}")
+            if team_leader_email != '.gitkeep':
+                print(f"Team leader {team_leader_email} does not exist in the database {mail_file_path}")
             continue
         expected_team_name = teams_df[teams_df['email'] == team_leader_email]['team_name']
         if expected_team_name.empty:
@@ -49,7 +50,7 @@ def select_files_to_score(submissions_dir: Path, scored_files_dir: Path = SCORED
                 print(f"Submission '{submission_path}' team name '{team_name}' not in the database '{mail_file_path}'")
                 continue
             elif submission_path.name in scored_submissions_set:
-                print(f"Submission already scored")
+                print(f"Submission already scored: Team {team_name} submission {submission_path.name} - {submission_path}")
                 continue
             files_to_score.append((team_leader_email, team_name, attempt_num, submission_path))
     return files_to_score
@@ -98,12 +99,7 @@ def examine_submission_directory(submission_directory_path, full_test_set_path=f
         relative_path = file_path.relative_to(submission_directory_path)
         if 'train' in str(relative_path):
             continue
-        test_file_path = full_test_set_path / relative_path
         if not (full_test_set_path / relative_path).exists():
             print(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
             return False
     return True
-
-
-def clean_directory(path):
-    pass
