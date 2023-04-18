@@ -1,10 +1,12 @@
 from pathlib import Path
-from settings import PROJECT_DIR, DEFAULT_MAIL_FILE_PATH, DEFAULT_PROCESSING_DIR, DETAILED_SCORES_DIR, SCORED_FILES_MEMORY_DIR, TEST_SETS_DEFAULT_DIR
+from settings import DEFAULT_MAIL_FILE_PATH, DEFAULT_PROCESSING_DIR, SCORED_FILES_MEMORY_DIR, TEST_SETS_DEFAULT_DIR, PREVIOUS_EVALUATIONS_DIR
+from datetime import datetime
 import pandas as pd
 import zipfile
 import os
 import re
 import json
+import shutil
 # from logging import 
 
 
@@ -17,6 +19,8 @@ TODO
 
 full_test_set_path = TEST_SETS_DEFAULT_DIR / "final_test_set"
 file_check_regex = re.compile("EPiC23_.+_Attempt_\d+.zip")
+results_file_regex = re.compile(r"\d{4}")
+
 
 with open(TEST_SETS_DEFAULT_DIR / "old_new_ids_map.json") as fp:
     OLD_NEW_ID_MAP = json.load(fp)
@@ -103,3 +107,13 @@ def examine_submission_directory(submission_directory_path, full_test_set_path=f
             print(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
             return False
     return True
+
+
+def save_results_to_csv(results_dict, save_dir, time_str=datetime.now().strftime("%Y-%m-%dT%H:%M:%S")):
+    scores_df = pd.DataFrame.from_dict(results_dict, orient='index')
+    scores_df.index.name = "team_leader_email"
+    validation_results_files = list(Path(save_dir).glob("*_validation_results.csv"))
+    for validation_results_file in validation_results_files:
+        store_dst = PREVIOUS_EVALUATIONS_DIR / validation_results_file.name
+        shutil.move(validation_results_file, store_dst)
+    scores_df.to_csv(Path(save_dir, f"{time_str}_validation_results.csv"))

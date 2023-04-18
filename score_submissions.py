@@ -3,19 +3,16 @@ import numpy as np
 import argparse
 import shutil
 from datetime import datetime
-from pathlib import Path
-from tqdm import tqdm
-from benedict import benedict
 # from utils.scoring_utils import unzip
-from utils.io_utils import select_files_to_score, unzip_file, examine_submission_directory
+from utils.io_utils import select_files_to_score, unzip_file, examine_submission_directory, save_results_to_csv
 from utils.scoring_utils import score_submission
-from settings import PROJECT_DIR, DEFAULT_PROCESSING_DIR, DETAILED_SCORES_DIR, SCORED_FILES_MEMORY_DIR, DEFAULT_SUBMISSIONS_DIR, TEST_SETS_DEFAULT_DIR
+from settings import DETAILED_SCORES_DIR, SCORED_FILES_MEMORY_DIR, DEFAULT_SUBMISSIONS_DIR, TEST_SETS_DEFAULT_DIR
 
 
 # TODO default or provided via argument 
-# TODO validation results as csv file saved by function that chcecks for colisions and moves colision to another dir
 submissions_dir = DEFAULT_SUBMISSIONS_DIR
 test_set_dir = TEST_SETS_DEFAULT_DIR / "final_test_set"
+scoring_save_dir = "./"
 
 
 if __name__ == "__main__":
@@ -27,7 +24,7 @@ if __name__ == "__main__":
         print("Nothing to score")
         exit()
     # iterate over selected files
-    scoring_results_benedict = benedict()
+    scoring_results_dict = dict()
     for team_leader_email, attempt_num, team_name, submission_path in files_to_score:
         # unzip the submission
         submission_processing_path = unzip_file(submission_path, team_leader_email, return_submission_processing_path=True)
@@ -48,12 +45,14 @@ if __name__ == "__main__":
         scores_benedict = score_submission(submission_directory_path, test_set_dir)
         # compute end result
         end_avg_rmse = np.mean(list(scores_benedict['dimensions_level'].values()))
-        scoring_results_benedict[str(submission_path.name).replace(".zip", "")] = end_avg_rmse
+        scoring_results_dict.setdefault(team_leader_email, dict())
+        scoring_results_dict[team_leader_email].setdefault("submission_name", submission_path.stem)
+        scoring_results_dict[team_leader_email].setdefault("rmse", end_avg_rmse)
         # prepare directory to store results
         detailed_scores_path = DETAILED_SCORES_DIR / team_leader_email
         detailed_scores_path.mkdir(exist_ok=True)
         # create results file path and save results to .json file
-        results_save_path = detailed_scores_path / str(submission_path.name).replace(".zip", ".json")
+        results_save_path = detailed_scores_path / (submission_path.stem + ".json")
         scores_benedict.to_json(filepath=results_save_path)
         # prepare directory to store original submission
         submission_store_dst = SCORED_FILES_MEMORY_DIR / submission_path.relative_to(submissions_dir)
@@ -62,7 +61,8 @@ if __name__ == "__main__":
         shutil.move(submission_path, submission_store_dst)
         # remove files extracted for processing
         shutil.rmtree(submission_processing_path)
-    scoring_results_benedict.to_json(filepath=Path("./", f"{script_start_time_str}_validation_results.json"))
+    # save results
+    save_results_to_csv(scoring_results_dict, scoring_save_dir, script_start_time_str)
 
 # for zipfile_path in submissions_dir.glob("*.zip"):
 #     print(get_submission_file_metadata(zipfile_path))
