@@ -35,7 +35,7 @@ def select_files_to_score(submissions_dir: Path, scored_files_dir: Path = SCORED
     for submission_email_path in submissions_dir.iterdir():
         team_leader_email = submission_email_path.name
         if team_leader_email not in valid_email_addresses_set:
-            if team_leader_email != '.gitkeep':
+            if team_leader_email not in {'.gitkeep', "README.md"}:
                 print(f"Team leader {team_leader_email} does not exist in the database {mail_file_path}")
             continue
         expected_team_name = teams_df[teams_df['email'] == team_leader_email]['team_name']
@@ -109,11 +109,11 @@ def examine_submission_directory(submission_directory_path, full_test_set_path=f
     return True
 
 
-def save_results_to_csv(results_dict, save_dir, time_str=datetime.now().strftime("%Y-%m-%dT%H:%M:%S")):
+def save_results_to_csv(results_dict, save_dir, time_str=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), is_final=False):
     scores_df = pd.DataFrame.from_dict(results_dict, orient='index')
     scores_df.index.name = "team_leader_email"
     validation_results_files = list(Path(save_dir).glob("*_validation_results.csv"))
     for validation_results_file in validation_results_files:
         store_dst = PREVIOUS_EVALUATIONS_DIR / validation_results_file.name
         shutil.move(validation_results_file, store_dst)
-    scores_df.to_csv(Path(save_dir, f"{time_str}_validation_results.csv"))
+    scores_df.to_csv(Path(save_dir, "final_results.csv" if is_final else f"{time_str}_validation_results.csv"))
