@@ -1,5 +1,5 @@
 from pathlib import Path
-from settings import DEFAULT_MAIL_FILE_PATH, DEFAULT_PROCESSING_DIR, SCORED_FILES_MEMORY_DIR, TEST_SETS_DEFAULT_DIR, PREVIOUS_EVALUATIONS_DIR
+from settings import PROJECT_DIR, DEFAULT_MAIL_FILE_PATH, DEFAULT_PROCESSING_DIR, SCORED_FILES_STORAGE_DIR, TEST_SETS_DEFAULT_DIR, PREVIOUS_EVALUATIONS_DIR, DEFAULT_LOGGING_STORAGE_DIR
 from datetime import datetime
 import pandas as pd
 import zipfile
@@ -7,14 +7,7 @@ import os
 import re
 import json
 import shutil
-# from logging import 
-
-
-"""
-TODO 
-- Add logs with names of processed files in each session
-- scores -> "scores_<datetime>.csv" with (mail, team, score) results
-"""
+from logging import Logger
 
 
 full_test_set_path = TEST_SETS_DEFAULT_DIR / "final_test_set"
@@ -26,7 +19,7 @@ with open(TEST_SETS_DEFAULT_DIR / "old_new_ids_map.json") as fp:
     OLD_NEW_ID_MAP = json.load(fp)
 
 
-def select_files_to_score(submissions_dir: Path, scored_files_dir: Path = SCORED_FILES_MEMORY_DIR, mail_file_path: Path = DEFAULT_MAIL_FILE_PATH, max_attempts_num: int = 3):
+def select_files_to_score(submissions_dir: Path, logger: Logger, scored_files_dir: Path = SCORED_FILES_STORAGE_DIR, mail_file_path: Path = DEFAULT_MAIL_FILE_PATH, max_attempts_num: int = 3):
     scored_submissions_set = set(zip_path.name for zip_path in scored_files_dir.glob("**/*.zip"))
     teams_num_attempts_dict = _count_teams_attempts(scored_submissions_set)
     teams_df = pd.read_csv(mail_file_path)
@@ -36,25 +29,31 @@ def select_files_to_score(submissions_dir: Path, scored_files_dir: Path = SCORED
         team_leader_email = submission_email_path.name
         if team_leader_email not in valid_email_addresses_set:
             if team_leader_email not in {'.gitkeep', "README.md"}:
-                print(f"Team leader {team_leader_email} does not exist in the database {mail_file_path}")
+                # print(f"Team leader {team_leader_email} does not exist in the database {mail_file_path}")
+                logger.error(f"Team leader {team_leader_email} does not exist in the database {mail_file_path}")
             continue
         expected_team_name = teams_df[teams_df['email'] == team_leader_email]['team_name']
         if expected_team_name.empty:
-            print(f"No team registered for the email address {team_leader_email}")
+            # print(f"No team registered for the email address {team_leader_email}")
+            logger.error(f"No team registered for the email address {team_leader_email}")
         expected_team_name = expected_team_name.iloc[0]
         if teams_num_attempts_dict.get(expected_team_name, 0) > max_attempts_num:
-            print(f"Team leader '{team_leader_email}' of team '{expected_team_name}' already has a max of {max_attempts_num} submissions scored")
+            # print(f"Team leader '{team_leader_email}' of team '{expected_team_name}' already has a max of {max_attempts_num} submissions scored")
+            logger.error(f"Team leader '{team_leader_email}' of team '{expected_team_name}' already has a max of {max_attempts_num} submissions scored")
             continue
         for submission_path in submission_email_path.iterdir():
             _, team_name, _, attempt_num = submission_path.name.split('.')[0].split('_')
             if not _is_valid_submission_name(submission_path.name):
-                print(f"Submission '{submission_path}' has invalid name")
+                # print(f"Submission '{submission_path}' has invalid name")
+                logger.error(f"Submission '{submission_path}' has invalid name")
                 continue
             elif team_name != expected_team_name:
-                print(f"Submission '{submission_path}' team name '{team_name}' not in the database '{mail_file_path}'")
+                # print(f"Submission '{submission_path}' team name '{team_name}' not in the database '{mail_file_path}'")
+                logger.error(f"Submission '{submission_path}' team name '{team_name}' not in the database '{mail_file_path}'")
                 continue
             elif submission_path.name in scored_submissions_set:
-                print(f"Submission already scored: Team {team_name} submission {submission_path.name} - {submission_path}")
+                # print(f"Submission already scored: Team {team_name} submission {submission_path.name} - {submission_path}")
+                logger.error(f"Submission already scored: Team {team_name} submission {submission_path.name} - {submission_path}")
                 continue
             files_to_score.append((team_leader_email, team_name, attempt_num, submission_path))
     return files_to_score
@@ -104,7 +103,8 @@ def examine_submission_directory(submission_directory_path, full_test_set_path=f
         if 'train' in str(relative_path):
             continue
         if not (full_test_set_path / relative_path).exists():
-            print(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
+            # print(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
+            logger.warning(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
             return False
     return True
 
@@ -117,3 +117,10 @@ def save_results_to_csv(results_dict, save_dir, time_str=datetime.now().strftime
         store_dst = PREVIOUS_EVALUATIONS_DIR / validation_results_file.name
         shutil.move(validation_results_file, store_dst)
     scores_df.to_csv(Path(save_dir, "final_results.csv" if is_final else f"{time_str}_validation_results.csv"))
+
+
+def move_logs(current_log_dir=PROJECT_DIR, log_storage_dir=DEFAULT_LOGGING_STORAGE_DIR):
+    logs_files = list(Path(current_log_dir).glob("*.log"))
+    for logs_file in logs_files:
+        store_dst = log_storage_dir / logs_file.name
+        shutil.move(logs_file, store_dst)    
