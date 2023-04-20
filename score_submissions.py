@@ -23,7 +23,7 @@ detailed_scores_memory_dir = DETAILED_SCORES_DIR / ("final" if args.final else "
 scoring_save_dir = "./"
 
 if __name__ == "__main__":
-    script_start_time_str = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    script_start_time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     logging_file_path = PROJECT_DIR / f"{script_start_time_str}_processing_logs.log"
     move_logs(PROJECT_DIR)
     logging.basicConfig(filename=logging_file_path, filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)

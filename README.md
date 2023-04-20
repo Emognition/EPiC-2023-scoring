@@ -41,4 +41,3 @@ python score_submissions.py --final
 Results are saved in the `.csv` file in the root of the repository, named either `<timestamp>_validation_results.csv` for validation scoring, or `<timestamp>_final_results.csv` for final test scoring. At the same time, logs from processing are saved in the `<timestamp>_processing_logs.csv`. If any old files with results or logs are present in the root of the repo, they will be moved to the `storage/previous_evaluarions` or `storage/previous_logs` respectively.
 
 After the processing, scored submissions are moved from `submissions_to_score` to the `storage/scored_submissions` directory.
- 
