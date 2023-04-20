@@ -1,4 +1,7 @@
 # EPiC 2023 scoring repository
+
+Before scoring please pull the current state of the repo, and push after scoring.
+
 ## 1. Repository preparation
 To run the code in the repo you need python (tested on python 3.10) and libraries from the requirements.txt file.
 
@@ -38,3 +41,4 @@ python score_submissions.py --final
 Results are be saved in the `.csv` file in the root of the repository, named either `<timestamp>_validation_results.csv` for validation scoring, or `<timestamp>_final_results.csv` for final test scoring. At the same time, logs from processing are be saved in the `<timestamp>_processing_logs.csv`. If any old files with results or logs are present in the root of the repo, they will be moved to the `storage/previous_evaluarions` or `storage/previous_logs` respectively.
 
 After the processing, scored submissions are moved from `submissions_to_score` to the `storage/scored_submissions` directory.
+ 
