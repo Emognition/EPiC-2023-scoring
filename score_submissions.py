@@ -31,7 +31,7 @@ if __name__ == "__main__":
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.info("FINAL PROCESSING" if args.final else "Trial processing")
     # select files to score from the submissions directory
-    files_to_score = select_files_to_score(submissions_dir, logger, scored_files_memory_dir)
+    files_to_score = select_files_to_score(submissions_dir, logger, scored_files_memory_dir, is_final=args.final)
     # exit if nothing to score
     if not files_to_score:
         # print("Nothing to score")
@@ -41,6 +41,10 @@ if __name__ == "__main__":
     scoring_results_dict = dict()
     for team_leader_email, attempt_num, team_name, submission_path in files_to_score:
         # unzip the submission
+        # submission_processing_path = output_dir / team_leader_email
+        # if args.final and submission_path.is_dir():
+        #     shutil.copy(submission_path)
+        # else:
         submission_processing_path = unzip_file(submission_path, team_leader_email, return_submission_processing_path=True)
         # prepare directory for results 
         submission_directory_path = submission_processing_path / "results"
@@ -50,7 +54,7 @@ if __name__ == "__main__":
             logger.error(f"Invalid submission structure: Team {team_name} submission {attempt_num} - {submission_path}")
             continue
         # check if submission has proper structure - iterate over all directories and files
-        if not examine_submission_directory(submission_directory_path):
+        if not examine_submission_directory(submission_directory_path, logger=logger):
             # print(f"Wrong structure of the submission directory: {submission_directory_path}")
             logger.error(f"Wrong structure of the submission directory: {submission_directory_path}")
             continue

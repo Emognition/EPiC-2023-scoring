@@ -1,5 +1,4 @@
 from benedict import benedict
-from pathlib import Path, PosixPath
 from settings import TEST_SETS_DEFAULT_DIR
 import os
 import pandas as pd

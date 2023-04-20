@@ -3,7 +3,6 @@ from settings import PROJECT_DIR, DEFAULT_MAIL_FILE_PATH, DEFAULT_PROCESSING_DIR
 from datetime import datetime
 import pandas as pd
 import zipfile
-import os
 import re
 import json
 import shutil
@@ -19,7 +18,7 @@ with open(TEST_SETS_DEFAULT_DIR / "old_new_ids_map.json") as fp:
     OLD_NEW_ID_MAP = json.load(fp)
 
 
-def select_files_to_score(submissions_dir: Path, logger: Logger, scored_files_dir: Path = SCORED_FILES_STORAGE_DIR, mail_file_path: Path = DEFAULT_MAIL_FILE_PATH, max_attempts_num: int = 3):
+def select_files_to_score(submissions_dir: Path, logger: Logger, scored_files_dir: Path = SCORED_FILES_STORAGE_DIR, mail_file_path: Path = DEFAULT_MAIL_FILE_PATH, max_attempts_num: int = 3, is_final: bool = False):
     scored_submissions_set = set(zip_path.name for zip_path in scored_files_dir.glob("**/*.zip"))
     teams_num_attempts_dict = _count_teams_attempts(scored_submissions_set)
     teams_df = pd.read_csv(mail_file_path)
@@ -42,6 +41,11 @@ def select_files_to_score(submissions_dir: Path, logger: Logger, scored_files_di
             logger.error(f"Team leader '{team_leader_email}' of team '{expected_team_name}' already has a max of {max_attempts_num} submissions scored")
             continue
         for submission_path in submission_email_path.iterdir():
+            if submission_path.name == ".gitkeep":
+                continue
+            # if is_final and submission_path.name == 'results':
+            #     files_to_score.append((team_leader_email, expected_team_name, 'final', submission_path))
+            #     continue
             _, team_name, _, attempt_num = submission_path.name.split('.')[0].split('_')
             if not _is_valid_submission_name(submission_path.name):
                 # print(f"Submission '{submission_path}' has invalid name")
@@ -97,14 +101,15 @@ def unzip_file(zip_file_path, submission_name: str, return_submission_processing
     return None
 
 
-def examine_submission_directory(submission_directory_path, full_test_set_path=full_test_set_path):
+def examine_submission_directory(submission_directory_path, full_test_set_path=full_test_set_path, logger=None):
     for file_path in submission_directory_path.glob("**/*.csv"):
         relative_path = file_path.relative_to(submission_directory_path)
         if 'train' in str(relative_path):
             continue
         if not (full_test_set_path / relative_path).exists():
             # print(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
-            logger.warning(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
+            if logger is not None:
+                logger.warning(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
             return False
     return True
 
