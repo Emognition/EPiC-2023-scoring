@@ -1,0 +1,5 @@
+root - INFO - Trial processing
+root - WARNING - C:\Users\Nicholas Coles work\Documents\EPiC-2023-scoring\storage\current_processing\lzj114@psu.edu\results\scenario_1\fold_0\sub_11_vid_1.csv does not have a corresponding path in the C:\Users\Nicholas Coles work\Documents\EPiC-2023-scoring\storage\test_sets\final_test_set
+root - ERROR - Wrong structure of the submission directory: C:\Users\Nicholas Coles work\Documents\EPiC-2023-scoring\storage\current_processing\lzj114@psu.edu\results
+root - WARNING - C:\Users\Nicholas Coles work\Documents\EPiC-2023-scoring\storage\current_processing\lzj114@psu.edu\results\scenario_1\fold_0\sub_11_vid_1.csv does not have a corresponding path in the C:\Users\Nicholas Coles work\Documents\EPiC-2023-scoring\storage\test_sets\final_test_set
+root - ERROR - Wrong structure of the submission directory: C:\Users\Nicholas Coles work\Documents\EPiC-2023-scoring\storage\current_processing\lzj114@psu.edu\results
