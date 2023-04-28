@@ -1,0 +1,3 @@
+root - INFO - Trial processing
+root - WARNING - D:\PWR\badania\emotions\EPiC-2023-scoring\storage\current_processing\lzj114@psu.edu\results\scenario_4\fold_0\test\annotation\sub_0_vid_0.csv does not have a corresponding path in the D:\PWR\badania\emotions\EPiC-2023-scoring\storage\test_sets\final_test_set
+root - ERROR - Wrong structure of the submission directory: D:\PWR\badania\emotions\EPiC-2023-scoring\storage\current_processing\lzj114@psu.edu\results
