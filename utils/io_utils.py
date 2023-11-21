@@ -21,42 +21,33 @@ with open(TEST_SETS_DEFAULT_DIR / "old_new_ids_map.json") as fp:
 def select_files_to_score(submissions_dir: Path, logger: Logger, scored_files_dir: Path = SCORED_FILES_STORAGE_DIR, mail_file_path: Path = DEFAULT_MAIL_FILE_PATH, max_attempts_num: int = 3, is_final: bool = False):
     scored_submissions_set = set(zip_path.name for zip_path in scored_files_dir.glob("**/*.zip"))
     teams_num_attempts_dict = _count_teams_attempts(scored_submissions_set)
-    teams_df = pd.read_csv(mail_file_path)
+    teams_df = pd.read_csv(mail_file_path, converters={'email': str.strip, 'team_name': str.strip})
     valid_email_addresses_set = set(teams_df['email'])
     files_to_score = list()
     for submission_email_path in submissions_dir.iterdir():
         team_leader_email = submission_email_path.name
         if team_leader_email not in valid_email_addresses_set:
             if team_leader_email not in {'.gitkeep', "README.md"}:
-                # print(f"Team leader {team_leader_email} does not exist in the database {mail_file_path}")
                 logger.error(f"Team leader {team_leader_email} does not exist in the database {mail_file_path}")
             continue
         expected_team_name = teams_df[teams_df['email'] == team_leader_email]['team_name']
         if expected_team_name.empty:
-            # print(f"No team registered for the email address {team_leader_email}")
             logger.error(f"No team registered for the email address {team_leader_email}")
         expected_team_name = expected_team_name.iloc[0]
         if teams_num_attempts_dict.get(expected_team_name, 0) > max_attempts_num:
-            # print(f"Team leader '{team_leader_email}' of team '{expected_team_name}' already has a max of {max_attempts_num} submissions scored")
             logger.error(f"Team leader '{team_leader_email}' of team '{expected_team_name}' already has a max of {max_attempts_num} submissions scored")
             continue
         for submission_path in submission_email_path.iterdir():
             if submission_path.name == ".gitkeep":
                 continue
-            # if is_final and submission_path.name == 'results':
-            #     files_to_score.append((team_leader_email, expected_team_name, 'final', submission_path))
-            #     continue
             _, team_name, _, attempt_num = submission_path.name.split('.')[0].split('_')
             if not _is_valid_submission_name(submission_path.name):
-                # print(f"Submission '{submission_path}' has invalid name")
                 logger.error(f"Submission '{submission_path}' has invalid name")
                 continue
             elif team_name != expected_team_name:
-                # print(f"Submission '{submission_path}' team name '{team_name}' not in the database '{mail_file_path}'")
                 logger.error(f"Submission '{submission_path}' team name '{team_name}' not in the database '{mail_file_path}'")
                 continue
             elif submission_path.name in scored_submissions_set:
-                # print(f"Submission already scored: Team {team_name} submission {submission_path.name} - {submission_path}")
                 logger.error(f"Submission already scored: Team {team_name} submission {submission_path.name} - {submission_path}")
                 continue
             files_to_score.append((team_leader_email, team_name, attempt_num, submission_path))
@@ -107,7 +98,6 @@ def examine_submission_directory(submission_directory_path, full_test_set_path=f
         if 'train' in str(relative_path):
             continue
         if not (full_test_set_path / relative_path).exists():
-            # print(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
             if logger is not None:
                 logger.warning(f"{file_path} does not have a corresponding path in the {full_test_set_path}")
             return False
@@ -129,3 +119,9 @@ def move_logs(current_log_dir=PROJECT_DIR, log_storage_dir=DEFAULT_LOGGING_STORA
     for logs_file in logs_files:
         store_dst = log_storage_dir / logs_file.name
         shutil.move(logs_file, store_dst)    
+
+
+def remove_tmp_files(submission_processing_path):
+    # remove files extracted for processing
+    shutil.rmtree(submission_processing_path)
+    return
